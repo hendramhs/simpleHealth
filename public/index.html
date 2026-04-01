@@ -223,6 +223,31 @@
         background: #fff;
       }
 
+      .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .pagination-info {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .pagination-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .pagination button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        filter: none;
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
@@ -431,6 +456,18 @@
             <tbody id="tabel"></tbody>
           </table>
         </div>
+
+        <div class="pagination">
+          <span id="pageInfo" class="pagination-info">Halaman 1 dari 1</span>
+          <div class="pagination-actions">
+            <button id="prevPageBtn" class="btn-secondary" type="button">
+              Sebelumnya
+            </button>
+            <button id="nextPageBtn" class="btn-secondary" type="button">
+              Berikutnya
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -460,6 +497,8 @@
       let data = [];
       let editingId = null;
       let pendingDeleteId = null;
+      let currentPage = 1;
+      const pageSize = 10;
 
       const namaInput = document.getElementById("nama");
       const umurInput = document.getElementById("umur");
@@ -473,6 +512,9 @@
       const deleteModal = document.getElementById("deleteModal");
       const deleteCancelBtn = document.getElementById("deleteCancelBtn");
       const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
+      const pageInfo = document.getElementById("pageInfo");
+      const prevPageBtn = document.getElementById("prevPageBtn");
+      const nextPageBtn = document.getElementById("nextPageBtn");
 
       function setStatus(type, text) {
         statusBox.className = "status";
@@ -512,16 +554,22 @@
           );
         });
 
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        currentPage = Math.min(currentPage, totalPages);
+        currentPage = Math.max(1, currentPage);
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pagedData = filtered.slice(startIndex, endIndex);
+
         tabelBody.innerHTML = "";
 
-        if (filtered.length === 0) {
+        if (pagedData.length === 0) {
           tabelBody.innerHTML = `<tr><td colspan="4" class="empty">Tidak ada data yang cocok.</td></tr>`;
           metaText.textContent = `${data.length} pasien • 0 ditampilkan`;
-          return;
-        }
-
-        filtered.forEach((p) => {
-          tabelBody.innerHTML += `
+        } else {
+          pagedData.forEach((p) => {
+            tabelBody.innerHTML += `
       <tr>
         <td>${p.nama}</td>
         <td><span class="chip">${p.umur} tahun</span></td>
@@ -534,9 +582,14 @@
         </td>
       </tr>
     `;
-        });
+          });
 
-        metaText.textContent = `${data.length} pasien • ${filtered.length} ditampilkan`;
+          metaText.textContent = `${data.length} pasien • ${filtered.length} hasil`;
+        }
+
+        pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
       }
 
       async function loadData() {
@@ -656,7 +709,10 @@
         namaInput.focus();
       }
 
-      searchInput.addEventListener("input", renderData);
+      searchInput.addEventListener("input", () => {
+        currentPage = 1;
+        renderData();
+      });
 
       loadData().then(() => {
         setStatus("", "");
@@ -718,6 +774,18 @@
         if (event.target === deleteModal) {
           tutupModalHapus();
         }
+      });
+
+      prevPageBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          renderData();
+        }
+      });
+
+      nextPageBtn.addEventListener("click", () => {
+        currentPage += 1;
+        renderData();
       });
     </script>
   </body>
