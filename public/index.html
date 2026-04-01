@@ -281,6 +281,51 @@
         font-weight: 700;
       }
 
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 18, 30, 0.45);
+        z-index: 50;
+        padding: 16px;
+      }
+
+      .modal.show {
+        display: flex;
+      }
+
+      .modal-card {
+        width: min(100%, 430px);
+        background: #ffffff;
+        border: 1px solid #e6ebf1;
+        border-radius: 16px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+        padding: 18px;
+        animation: riseIn 200ms ease-out;
+      }
+
+      .modal-title {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .modal-text {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+
+      .modal-actions {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
       @keyframes riseIn {
         from {
           opacity: 0;
@@ -389,9 +434,32 @@
       </div>
     </div>
 
+    <div id="deleteModal" class="modal" aria-hidden="true">
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deleteModalTitle"
+      >
+        <h2 id="deleteModalTitle" class="modal-title">Hapus Data Pasien?</h2>
+        <p class="modal-text">
+          Data yang dihapus tidak dapat dikembalikan. Lanjutkan penghapusan?
+        </p>
+        <div class="modal-actions">
+          <button id="deleteCancelBtn" class="btn-secondary" type="button">
+            Batal
+          </button>
+          <button id="deleteConfirmBtn" class="btn-danger" type="button">
+            Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script>
       let data = [];
       let editingId = null;
+      let pendingDeleteId = null;
 
       const namaInput = document.getElementById("nama");
       const umurInput = document.getElementById("umur");
@@ -402,6 +470,9 @@
       const cancelBtn = document.getElementById("cancelBtn");
       const statusBox = document.getElementById("status");
       const metaText = document.getElementById("meta");
+      const deleteModal = document.getElementById("deleteModal");
+      const deleteCancelBtn = document.getElementById("deleteCancelBtn");
+      const deleteConfirmBtn = document.getElementById("deleteConfirmBtn");
 
       function setStatus(type, text) {
         statusBox.className = "status";
@@ -527,13 +598,26 @@
         setStatus("warn", "Mode edit dibatalkan.");
       }
 
-      async function hapus(id) {
-        const confirmDelete = window.confirm(
-          "Yakin ingin menghapus data pasien ini?",
-        );
-        if (!confirmDelete) {
+      function bukaModalHapus(id) {
+        pendingDeleteId = id;
+        deleteModal.classList.add("show");
+        deleteModal.setAttribute("aria-hidden", "false");
+        deleteCancelBtn.focus();
+      }
+
+      function tutupModalHapus() {
+        pendingDeleteId = null;
+        deleteModal.classList.remove("show");
+        deleteModal.setAttribute("aria-hidden", "true");
+      }
+
+      async function konfirmasiHapus() {
+        if (pendingDeleteId === null) {
           return;
         }
+
+        const id = pendingDeleteId;
+        tutupModalHapus();
 
         try {
           await fetch(`/pasien/${id}`, { method: "DELETE" });
@@ -547,6 +631,10 @@
         } catch (error) {
           setStatus("error", "Gagal menghapus data pasien.");
         }
+      }
+
+      async function hapus(id) {
+        bukaModalHapus(id);
       }
 
       function edit(id) {
@@ -577,6 +665,11 @@
       });
 
       document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && deleteModal.classList.contains("show")) {
+          tutupModalHapus();
+          return;
+        }
+
         if (
           (event.ctrlKey || event.metaKey) &&
           event.key.toLowerCase() === "enter"
@@ -617,6 +710,14 @@
 
       window.addEventListener("pageshow", () => {
         renderData();
+      });
+
+      deleteCancelBtn.addEventListener("click", tutupModalHapus);
+      deleteConfirmBtn.addEventListener("click", konfirmasiHapus);
+      deleteModal.addEventListener("click", (event) => {
+        if (event.target === deleteModal) {
+          tutupModalHapus();
+        }
       });
     </script>
   </body>
