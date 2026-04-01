@@ -363,7 +363,7 @@
         <div class="toolbar">
           <input
             id="search"
-            placeholder="Cari nama pasien..."
+            placeholder="Cari nama, umur, atau diagnosa..."
             onkeyup="renderData()"
           />
           <span id="meta" class="meta">0 pasien</span>
@@ -424,10 +424,18 @@
       }
 
       function renderData() {
-        const keyword = searchInput.value.toLowerCase();
-        const filtered = data.filter((p) =>
-          p.nama.toLowerCase().includes(keyword),
-        );
+        const keyword = searchInput.value.trim().toLowerCase();
+        const filtered = data.filter((p) => {
+          const nama = String(p.nama || "").toLowerCase();
+          const umur = String(p.umur || "");
+          const diagnosa = String(p.diagnosa || "").toLowerCase();
+
+          return (
+            nama.includes(keyword) ||
+            umur.includes(keyword) ||
+            diagnosa.includes(keyword)
+          );
+        });
 
         tabelBody.innerHTML = "";
 
