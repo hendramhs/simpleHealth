@@ -10,7 +10,7 @@ app.use(express.static("public"));
 // koneksi MySQL
 const db = mysql.createConnection({
   host: "localhost",
-  user: "userapp",
+  user: "appuser",
   password: "password123", // isi kalau ada
   database: "kesehatan"
 });
