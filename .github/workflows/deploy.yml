@@ -18,10 +18,13 @@ jobs:
 
     - name: Deploy ke EC2
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@16.176.207.27 << 'EOF'
+        ssh -o StrictHostKeyChecking=no ubuntu@16.176.207.27 << EOF
+        echo "=== MASUK SERVER ==="
         cd /var/www/simpleHealth
-        git pull origin main
+        git fetch --all
+        git reset --hard origin/main
         npm install
         pm2 restart all
         sudo systemctl restart nginx
+        echo "=== SELESAI ==="
         EOF
